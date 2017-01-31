@@ -1,0 +1,12 @@
+## Interface: 70100
+## Title: Broker: CalendarAF
+## Notes: DataBroker plugin showing upcoming calendar events.
+## Author: AlternateFiction
+## Version: @project-version@
+## OptionalDeps: Ace3, LibDataBroker-1.1, LibDBIcon-1.0
+## SavedVariables: BrokerCalendarAFDB
+
+embeds.xml
+
+Broker_CalendarAF.lua
+Config.lua
