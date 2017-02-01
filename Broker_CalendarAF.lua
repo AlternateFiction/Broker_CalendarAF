@@ -17,8 +17,8 @@ local LibDBIcon = LibStub("LibDBIcon-1.0", true)
 local COLOR_GRAY      = {0.50, 0.50, 0.50}
 local COLOR_YELLOW    = {1.00, 0.82, 0.00}
 local COLOR_ORANGERED = {1.00, 0.45, 0.17}
-local PATTERN_EVENT_POSTFIX_START = " Begins$"
-local PATTERN_EVENT_POSTFIX_STOP  = " Ends$"
+local PATTERN_POSTFIX_EVENT_START = " Begins$"
+local PATTERN_POSTFIX_EVENT_STOP  = " Ends$"
 
 local AF = Broker_CalendarAF.AF
 AF.fancyName = "Broker CalendarAF"
@@ -116,8 +116,8 @@ end
 
 function Broker_CalendarAF:UpdateCalendarEventData()
 
-    -- certain commands in the update function trigger events so to avoid infinite recursion we
-    -- ignore any further calls until the function has ended
+    -- certain function calls in ScanCalendar trigger CALENDAR_* events, to avoid infinite recursion we
+    -- ignore any further calls until the function has returned
     if AF.ignoreEventUpdates then return end
     AF.ignoreEventUpdates = true
 
@@ -174,7 +174,7 @@ function Broker_CalendarAF:ScanCalendar(daysToScan, allowCalendarSwitch)
             local title, hour, minute, calendarType, sequenceType, _, _, modStatus, inviteStatus = CalendarGetDayEvent(monthOffset, day, eventIndex)
 
             if self.db.trackedEvents[calendarType] then
-                debugPrint("--",calendarType,sequenceType,title)
+                debugPrint("--", calendarType, sequenceType, title)
 
                 if sequenceType == "START" or (sequenceType == "ONGOING" and day == today) or sequenceType == "" then
                     local startDay, startMonth, startYear = day, month + monthOffset, year
@@ -191,7 +191,7 @@ function Broker_CalendarAF:ScanCalendar(daysToScan, allowCalendarSwitch)
                             else
                                 startMonth = month - monthOffset - 1
                             end
-                            startDay = select(3, CalendarGetMonth(monthOffset-1)) - startDay
+                            startDay = select(3, CalendarGetMonth(monthOffset-1)) + startDay
                         end
                     end
 
@@ -210,13 +210,16 @@ function Broker_CalendarAF:ScanCalendar(daysToScan, allowCalendarSwitch)
                     AF.calEvents[#AF.calEvents+1] = {
                         start = time({year=startYear, month=startMonth, day=startDay, hour=hour, minute=minute}),
                         stop = time({year=stopYear, month=stopMonth, day=stopDay, hour=hour, minute=minute}),
-                        title = title:gsub(PATTERN_EVENT_POSTFIX_START, ""),
+                        title = title:gsub(PATTERN_POSTFIX_EVENT_START, ""),
                         type = calendarType
                     }
+
+                    debugPrint("---- add:", format("%d-%02d-%02d %02d:%02d",startYear,startMonth,startDay,hour,minute), "=>", format("%d-%02d-%02d %02d:%02d",stopYear,stopMonth,stopDay,hour,minute))
+
                 
                 elseif sequenceType == "END" then
                     for _, event in ipairs(AF.calEvents) do
-                        if event.title == title:gsub(PATTERN_EVENT_POSTFIX_STOP, "") then
+                        if event.title == title:gsub(PATTERN_POSTFIX_EVENT_STOP, "") then
                             if (month + monthOffset) > 12 then
                                 event.stop = time({year=year+1, month=1, day=day, hour=hour, minute=minute})
                             else
